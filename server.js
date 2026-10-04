@@ -27,10 +27,10 @@ const uploadsRoutes = require("./routes/uploads");
 
 const allowedOrigins = [
   "https://mtluxor.vercel.app",
+  "https://mt-luxor-admin.vercel.app",
   "http://localhost:5173",
   "http://localhost:5174",
 ];
-
 if (process.env.CLIENT_URL) {
   process.env.CLIENT_URL
     .split(",")
