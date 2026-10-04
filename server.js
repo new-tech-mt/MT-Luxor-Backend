@@ -25,19 +25,29 @@ const uploadsRoutes = require("./routes/uploads");
    CORS
 ========================================================= */
 
-const allowedOrigins = (
-  process.env.CLIENT_URL ||
-  "http://localhost:5173"
-)
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  "https://mtluxor.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+
+if (process.env.CLIENT_URL) {
+  process.env.CLIENT_URL
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+    .forEach((origin) => {
+      if (!allowedOrigins.includes(origin)) {
+        allowedOrigins.push(origin);
+      }
+    });
+}
 
 app.use(
   cors({
     origin(origin, callback) {
       // Allow requests without an Origin header
-      // such as server-to-server requests and health checks.
+      // such as direct browser/API requests.
       if (!origin) {
         return callback(null, true);
       }
@@ -46,17 +56,18 @@ app.use(
         return callback(null, true);
       }
 
+      console.error("CORS blocked origin:", origin);
+
       return callback(
-        new Error("Origin is not allowed by CORS.")
+        new Error(`CORS blocked origin: ${origin}`)
       );
     },
-
     credentials: true,
   })
 );
 
 /* =========================================================
-   BODY PARSER
+   BODY PARSERS
 ========================================================= */
 
 app.use(
@@ -73,7 +84,7 @@ app.use(
 );
 
 /* =========================================================
-   ROOT
+   HEALTH / ROOT
 ========================================================= */
 
 app.get("/", (req, res) => {
@@ -82,10 +93,6 @@ app.get("/", (req, res) => {
     message: "MT Luxor Backend is running.",
   });
 });
-
-/* =========================================================
-   HEALTH CHECK
-========================================================= */
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -96,79 +103,27 @@ app.get("/api/health", (req, res) => {
 });
 
 /* =========================================================
-   PRODUCT ROUTES
+   API ROUTES
 ========================================================= */
 
-app.use(
-  "/api/products",
-  productsRoutes
-);
+app.use("/api/products", productsRoutes);
+
+app.use("/api/categories", categoriesRoutes);
+
+app.use("/api/orders", ordersRoutes);
+
+app.use("/api/payments", paymentsRoutes);
+
+app.use("/api/settings", settingsRoutes);
+
+app.use("/api/shipping", shippingRoutes);
+
+app.use("/api/users", usersRoutes);
+
+app.use("/api/uploads", uploadsRoutes);
 
 /* =========================================================
-   CATEGORY ROUTES
-========================================================= */
-
-app.use(
-  "/api/categories",
-  categoriesRoutes
-);
-
-/* =========================================================
-   ORDER ROUTES
-========================================================= */
-
-app.use(
-  "/api/orders",
-  ordersRoutes
-);
-
-/* =========================================================
-   PAYMENT ROUTES
-========================================================= */
-
-app.use(
-  "/api/payments",
-  paymentsRoutes
-);
-
-/* =========================================================
-   STORE SETTINGS ROUTES
-========================================================= */
-
-app.use(
-  "/api/settings",
-  settingsRoutes
-);
-
-/* =========================================================
-   SHIPPING ROUTES
-========================================================= */
-
-app.use(
-  "/api/shipping",
-  shippingRoutes
-);
-
-/* =========================================================
-   USER / CUSTOMER ROUTES
-========================================================= */
-
-app.use(
-  "/api/users",
-  usersRoutes
-);
-
-/* =========================================================
-   IMAGE UPLOAD ROUTES
-========================================================= */
-
-app.use(
-  "/api/uploads",
-  uploadsRoutes
-);
-
-/* =========================================================
-   404 HANDLER
+   404
 ========================================================= */
 
 app.use((req, res) => {
@@ -179,17 +134,11 @@ app.use((req, res) => {
 });
 
 /* =========================================================
-   GLOBAL ERROR HANDLER
+   ERROR HANDLER
 ========================================================= */
 
 app.use((error, req, res, next) => {
-  console.error("");
-  console.error("========================================");
-  console.error(" SERVER ERROR");
-  console.error("========================================");
-  console.error(error);
-  console.error("========================================");
-  console.error("");
+  console.error("Server error:", error);
 
   res.status(error.status || 500).json({
     success: false,
@@ -200,69 +149,48 @@ app.use((error, req, res, next) => {
 });
 
 /* =========================================================
-   LOCAL DEVELOPMENT SERVER
+   LOCAL DEVELOPMENT
 ========================================================= */
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
-    console.log("");
-    console.log("========================================");
-    console.log(" MT LUXOR BACKEND");
-    console.log("========================================");
-
+    console.log("====================================");
+    console.log("MT LUXOR BACKEND");
+    console.log("====================================");
+    console.log(`Server: http://localhost:${PORT}`);
     console.log(
-      ` Server: http://localhost:${PORT}`
+      `Health: http://localhost:${PORT}/api/health`
     );
-
     console.log(
-      ` Health: http://localhost:${PORT}/api/health`
+      `Products: http://localhost:${PORT}/api/products`
     );
-
     console.log(
-      ` Products: http://localhost:${PORT}/api/products`
+      `Categories: http://localhost:${PORT}/api/categories`
     );
-
     console.log(
-      ` Categories: http://localhost:${PORT}/api/categories`
+      `Orders: http://localhost:${PORT}/api/orders`
     );
-
     console.log(
-      ` Orders: http://localhost:${PORT}/api/orders`
+      `Payments: http://localhost:${PORT}/api/payments`
     );
-
     console.log(
-      ` Payments: http://localhost:${PORT}/api/payments`
+      `Settings: http://localhost:${PORT}/api/settings`
     );
-
     console.log(
-      ` Settings: http://localhost:${PORT}/api/settings`
+      `Shipping: http://localhost:${PORT}/api/shipping`
     );
-
     console.log(
-      ` Shipping: http://localhost:${PORT}/api/shipping`
+      `Users: http://localhost:${PORT}/api/users`
     );
-
     console.log(
-      ` Users: http://localhost:${PORT}/api/users`
+      `Uploads: http://localhost:${PORT}/api/uploads`
     );
-
     console.log(
-      ` Uploads: http://localhost:${PORT}/api/uploads`
+      `Allowed Origins: ${allowedOrigins.join(", ")}`
     );
-
-    console.log(
-      ` Allowed Origins: ${allowedOrigins.join(", ")}`
-    );
-
-    console.log(" Database: Supabase");
-
-    console.log("========================================");
-    console.log("");
+    console.log("Database: Supabase");
+    console.log("====================================");
   });
 }
-
-/* =========================================================
-   VERCEL / EXPRESS EXPORT
-========================================================= */
 
 module.exports = app;
